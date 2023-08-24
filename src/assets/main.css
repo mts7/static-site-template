@@ -1,0 +1,51 @@
+@import './base.css';
+
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+
+  font-weight: normal;
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: rgb(255, 0, 255);
+  transition: 0.4s;
+}
+
+.story p {
+	background-color: rgba(255, 0, 255, .3);
+	border-radius: 15px;
+	margin-bottom: 15px;
+	padding: 7px;
+}
+
+@media (prefers-color-scheme: dark) {
+	.story p {
+		background-color: #3C3C3C;
+	}
+}
+
+.dark-pink {
+	color: rgba(255, 0, 255, .77);
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: rgba(255, 0, 255, .2);
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    display: block;
+  }
+
+  #app {
+    display: block;
+    grid-template-columns: 1fr 1fr;
+    padding: 0 2rem;
+  }
+}
