@@ -1,0 +1,203 @@
+version: 2.1
+
+orbs:
+  aws-cli: circleci/aws-cli@3.1.3
+  node: circleci/node@5.0.3
+  terraform: circleci/terraform@3.2.0
+
+commands:
+  checkout-code:
+    steps:
+      - restore_cache:
+          keys:
+            - source-v1-{{ .Branch }}-{{ .Revision }}
+            - source-v1-{{ .Branch }}-
+            - source-v1-
+      - checkout
+      - run:
+          name: git Garbage Collection
+          command: git gc
+      - save_cache:
+          key: source-v1-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".git"
+
+  build-application:
+    steps:
+      - setup-yarn
+      - run:
+          name: Yarn build
+          command: yarn build
+      - run:
+          name: Copy build directory to artifacts
+          command: |
+            mkdir -p artifacts/dist
+            cp -r dist/* artifacts/dist/
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - artifacts
+
+  install-packages:
+    steps:
+      - restore_cache:
+          name: Restore Package Cache
+          keys:
+            - package-v2-{{ checksum "package.json" }}
+            - package-v2-
+      - node/install-packages:
+          pkg-manager: yarn
+          with-cache: false
+      - save_cache:
+          name: Save Package Cache
+          key: package-v2-{{ checksum "package.json" }}
+          paths:
+            - ~/project/node_modules
+
+  invalidate-distribution:
+    steps:
+      - attach_workspace:
+          at: ./
+      - aws-cli/setup
+      - run:
+          name: Invalidate CloudFront Distribution
+          command: |
+            AWS_DISTRIBUTION_ID=$(cat artifacts/cloudfront_distribution.txt | sed 's/\"//g')
+            aws cloudfront create-invalidation --distribution-id ${AWS_DISTRIBUTION_ID} --paths "/*"
+
+  setup-yarn:
+    steps:
+      - checkout-code
+      - node/install-yarn
+      - install-packages
+
+  test-application:
+    steps:
+      - run:
+          name: Execute Vite tests with Yarn
+          command: yarn run test:unit
+
+  type-check:
+    steps:
+      - run:
+          name: Yarn Type Check
+          command: yarn run-p type-check
+
+  upload-to-s3:
+    steps:
+      - attach_workspace:
+          at: ./
+      - aws-cli/setup
+      - run:
+          name: Upload /dist to S3 bucket
+          command: |
+            AWS_BUCKET_NAME=$(cat artifacts/bucket_name.txt | sed 's/\"//g')
+            aws s3 sync ./artifacts/dist/ s3://${AWS_BUCKET_NAME} --delete
+
+jobs:
+  check-app:
+    executor: node/default
+    steps:
+      - setup-yarn
+      - run:
+          name: Run Prettier
+          command: yarn prettier
+      - run:
+          name: Run Lint
+          command: yarn lint
+      - type-check
+      - test-application
+
+  create-artifacts-directory:
+    executor: node/default
+    steps:
+      - run:
+          name: Create artifacts directory
+          command: mkdir -p artifacts
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - artifacts
+
+  copy-dist-to-s3:
+    executor: aws-cli/default
+    steps:
+      - upload-to-s3
+
+  invalidate-cloudfront-distribution:
+    executor: aws-cli/default
+    steps:
+      - invalidate-distribution
+
+  terraform-build:
+    executor: terraform/default
+    steps:
+      - checkout-code
+      - attach_workspace:
+          at: ./
+      - terraform/init:
+          path: ./static-site
+      - terraform/validate:
+          path: ./static-site
+      - terraform/fmt:
+          path: ./static-site
+      - terraform/plan:
+          path: ./static-site
+      - terraform/apply:
+          path: ./static-site
+      - run:
+          name: Save bucket name
+          command: |
+            cd static-site
+            terraform output bucket_name > ../artifacts/bucket_name.txt
+            terraform output cloudfront_distribution > ../artifacts/cloudfront_distribution.txt
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - artifacts
+
+  yarn-build:
+    executor: node/default
+    steps:
+      - build-application
+
+workflows:
+  build:
+    jobs:
+      - check-app
+      - create-artifacts-directory:
+          filters:
+            branches:
+              only:
+                main
+      - yarn-build:
+          requires:
+            - check-app
+            - create-artifacts-directory
+          filters:
+            branches:
+              only:
+                main
+      - terraform-build:
+          requires:
+            - check-app
+            - create-artifacts-directory
+          filters:
+            branches:
+              only:
+                main
+      - copy-dist-to-s3:
+          requires:
+            - yarn-build
+            - terraform-build
+          filters:
+            branches:
+              only:
+                main
+      - invalidate-cloudfront-distribution:
+          requires:
+            - copy-dist-to-s3
+          filters:
+            branches:
+              only:
+                main
