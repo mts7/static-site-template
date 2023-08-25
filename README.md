@@ -3,6 +3,20 @@ Static web site template using Vue, CloudFront, S3, and Terraform
 
 ## Configuration
 
+### Replace TODO Values
+
+Update all the `TODO` and `todo` references with the corresponding values.
+- index.ts
+- App.vue
+- google-tag-manager.js
+- package.json
+- index.html
+- create-tfstate-backend-bucket.sh
+
+### Yarn
+
+Run `yarn install` in the root directory to install the packages.
+
 ### AWS
 
 Run `aws configure` and follow the prompts as necessary.
@@ -15,22 +29,9 @@ If the computer is already set up to use AWS, skip this step.
 
 1. Update the variables in `static-site/vars.tf`.
 2. Update all the `todo` or `TODO` references in the `static-site/backend.tf` file.
-3. Run `terraform init` from the `static-site` directory to initialize the Terraform infrastructure.
-   1. The S3 bucket might need to exist before initializing Terraform. 
-   If it does, this static site template should attempt to create the bucket.
-
-### Vue
-
-Update all the `TODO` and `todo` references with the corresponding values.
-- index.ts
-- App.vue
-- google-tag-manager.js
-- package.json
-- index.html
-
-### Yarn
-
-Run `yarn install` in the root directory to install the packages.
+3. Verify `create-tfstate-backend-bucket.sh` uses the same bucket name as in `backend.tf`.
+4. Execute `./scripts/create-tfstate-backend-bucket.sh` to create the bucket. 
+5. Run `terraform init` from the `static-site` directory to initialize the Terraform infrastructure.
 
 ## Notes
 
