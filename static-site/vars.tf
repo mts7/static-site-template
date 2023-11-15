@@ -2,12 +2,20 @@ variable "domain" {
   default = "example.com"
 }
 
+variable "app_domain" {
+  default = "app.example.com"
+}
+
 variable "bucket_name" {
-  default = "example.com"
+  default = "app.example.com"
+}
+
+variable "backend_bucket_prefix" {
+  default = "app.example.com"
 }
 
 variable "log_bucket" {
-  default = "logs.example.com"
+  default = "app.example.com-logs"
 }
 
 variable "region" {

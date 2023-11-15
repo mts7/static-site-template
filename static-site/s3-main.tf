@@ -2,6 +2,14 @@ resource "aws_s3_bucket" "static-site" {
   bucket = var.bucket_name
 }
 
+resource "aws_s3_bucket_ownership_controls" "static-site" {
+  bucket = aws_s3_bucket.log-bucket.id
+
+  rule {
+    object_ownership = "ObjectWriter"
+  }
+}
+
 resource "aws_s3_bucket_acl" "static-site" {
   bucket = aws_s3_bucket.static-site.id
   acl    = "private"

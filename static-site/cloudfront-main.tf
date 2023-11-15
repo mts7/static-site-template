@@ -12,8 +12,8 @@ resource "aws_cloudfront_distribution" "static-site-distribution" {
     }
   }
 
-  aliases = ["www.${var.domain}"]
-  tags    = { "project" : var.domain }
+  aliases = [var.app_domain]
+  tags    = { "project" : var.app_domain }
 
   logging_config {
     bucket          = "${var.log_bucket}.s3.amazonaws.com"
