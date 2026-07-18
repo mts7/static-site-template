@@ -11,8 +11,8 @@ resource "aws_cloudfront_cache_policy" "static-site" {
   comment = "Caching for ${var.bucket_name}: no query strings/cookies, static-export TTLs"
 
   min_ttl     = 0
-  default_ttl = 7200
-  max_ttl     = 86400
+  default_ttl = 86400
+  max_ttl     = 31536000
 
   parameters_in_cache_key_and_forwarded_to_origin {
     enable_accept_encoding_gzip   = true
