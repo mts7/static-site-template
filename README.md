@@ -116,8 +116,10 @@ it needs the same four things:
 - **Format** ([Prettier](https://prettier.io/)): `yarn run format` (fixes in place) /
   `yarn run format:check` (CI).
 - **Security scanning**: [CodeQL](https://codeql.github.com/) runs on every push/PR and weekly via
-  `.github/workflows/codeql.yml` (free for public GitHub repos). [Dependabot](https://docs.github.com/en/code-security/dependabot)
-  is already enabled on this repo for dependency vulnerability and version-update PRs.
+  `.github/workflows/codeql.yml` (free for public GitHub repos). Security vulnerability alerts are
+  already enabled on this repo; `.github/dependabot.yml` additionally schedules weekly version-update
+  PRs for npm packages, GitHub Actions, and the Terraform provider, grouping minor/patch bumps
+  together to cut down on PR noise.
 - **Pre-commit hook**: [Husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged)
   lint/format staged files on commit automatically — set up by `yarn install` (`prepare` script),
   no manual step needed.
