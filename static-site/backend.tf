@@ -21,6 +21,8 @@ import {
   id = "${var.backend_bucket_prefix}-backend-terraform-state"
 }
 
+# trivy:ignore:AWS-0320
+# trivy:ignore:AWS-0089
 resource "aws_s3_bucket" "terraform_state" {
   bucket        = "${var.backend_bucket_prefix}-backend-terraform-state"
   force_destroy = false
@@ -38,6 +40,7 @@ resource "aws_s3_bucket_versioning" "terraform_state" {
   }
 }
 
+# trivy:ignore:AWS-0132
 resource "aws_s3_bucket_server_side_encryption_configuration" "default" {
   bucket = aws_s3_bucket.terraform_state.id
 

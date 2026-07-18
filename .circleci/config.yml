@@ -109,6 +109,50 @@ jobs:
             - type-check
             - test-application
 
+    terraform-check:
+        executor:
+            name: node/default
+            tag: '22'
+        steps:
+            - checkout-code
+            - run:
+                  name: Install Terraform
+                  command: |
+                      curl -sSLO https://releases.hashicorp.com/terraform/1.11.4/terraform_1.11.4_linux_amd64.zip
+                      curl -sSLO https://releases.hashicorp.com/terraform/1.11.4/terraform_1.11.4_SHA256SUMS
+                      sha256sum --ignore-missing -c terraform_1.11.4_SHA256SUMS
+                      unzip terraform_1.11.4_linux_amd64.zip
+                      sudo install -c -v terraform /usr/local/bin/
+            - run:
+                  name: Install TFLint
+                  command: |
+                      curl -sSLO https://github.com/terraform-linters/tflint/releases/download/v0.64.0/tflint_linux_amd64.zip
+                      curl -sSLO https://github.com/terraform-linters/tflint/releases/download/v0.64.0/checksums.txt
+                      sha256sum --ignore-missing -c checksums.txt
+                      unzip tflint_linux_amd64.zip
+                      sudo install -c -v tflint /usr/local/bin/
+            - run:
+                  name: Install Trivy
+                  command: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.72.0
+            - run:
+                  name: Terraform init
+                  command: cd static-site && terraform init -backend=false -input=false
+            - run:
+                  name: Terraform validate
+                  command: cd static-site && terraform validate
+            - run:
+                  name: Terraform fmt check
+                  command: cd static-site && terraform fmt -check -diff
+            - run:
+                  name: TFLint
+                  command: |
+                      cd static-site
+                      tflint --init
+                      tflint
+            - run:
+                  name: Trivy config scan
+                  command: trivy config --exit-code 1 static-site
+
     create-artifacts-directory:
         executor:
             name: node/default
@@ -172,6 +216,7 @@ workflows:
     build:
         jobs:
             - check-app
+            - terraform-check
             - create-artifacts-directory:
                   filters:
                       branches:

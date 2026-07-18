@@ -99,9 +99,13 @@ it needs the same four things:
     - CircleCI: Project Settings → Environment Variables.
 2. **Checks**: `yarn run format:check`, `yarn run lint:check`, `yarn run type-check`,
    `yarn run test:unit`, `yarn run build`.
-3. **Terraform**, run from `static-site/`: `init` → `validate` → `fmt -check` → `plan` → `apply`
-   (the state bucket from the Terraform setup above must already exist).
-4. **Deploy**: sync `out/` to the S3 bucket (`terraform output -raw bucket_name`), then invalidate
+3. **Terraform read-only checks** — `init` → `validate` → `fmt -check` → TFLint → Trivy config
+   scan, run from `static-site/`. No AWS credentials needed for any of these; both pipelines run
+   them on every PR/branch, not just `master`, so problems surface before merge instead of during
+   deploy. See [Terraform Checks](#terraform-checks) below.
+4. **Terraform plan/apply** — needs AWS credentials and the state bucket from the Terraform setup
+   above to already exist; runs only on push to `master`.
+5. **Deploy**: sync `out/` to the S3 bucket (`terraform output -raw bucket_name`), then invalidate
    CloudFront (`terraform output -raw cloudfront_distribution`).
 
 ## Testing
@@ -115,6 +119,48 @@ it needs the same four things:
   (`thresholds.break: null` in `stryker.config.json`), since only `page.tsx` and `routes.ts` have
   unit tests so far — tighten the threshold as coverage grows.
 
+## Terraform Checks
+
+[TFLint](https://github.com/terraform-linters/tflint) (correctness/best-practices, with the AWS
+ruleset plugin) and [Trivy](https://trivy.dev/) (`trivy config`, security misconfiguration
+scanning — the modern replacement for the now-deprecated tfsec) run against `static-site/` on
+every PR in both CI pipelines. Neither is installed via `yarn` — they're standalone binaries, not
+npm packages — and neither runs in the pre-commit hook, so cloning this template and running
+`yarn install` never requires installing them. They only matter if you're editing the Terraform.
+
+To run them locally and get the same result CI will, install once via Homebrew:
+
+```sh
+brew install terraform-linters/tap/tflint trivy
+```
+
+Then, from the repo root:
+
+```sh
+yarn run tf:check       # everything CI runs: fmt check, validate, TFLint, Trivy
+yarn run tf:fmt:check
+yarn run tf:validate
+yarn run tf:lint
+yarn run tf:scan
+```
+
+A handful of Trivy findings are intentionally suppressed with inline `# trivy:ignore:<ID>`
+comments rather than fixed, because the underlying rule doesn't fit this template's design:
+
+- **AWS-0132** (S3 should use customer-managed KMS keys) — SSE-S3 (AES256, already applied) is
+  sufficient here; SSE-KMS adds per-request cost and key-management overhead disproportionate to
+  a static site template.
+- **AWS-0320** (S3 bucket names should be DNS-compliant) — the dots in the bucket name are
+  intentional (`bucket_name` is domain-derived, e.g. `app.example.com`); the risk this rule guards
+  against (broken TLS for virtual-hosted-style public S3 URLs) doesn't apply since the bucket is
+  private and only ever reached via CloudFront/OAC over SigV4, never a direct public HTTPS URL.
+- **AWS-0089** (S3 bucket should have access logging enabled) — CloudFront's own `logging_config`
+  already captures all real traffic to the site bucket; S3-level access logging would be
+  redundant.
+- **AWS-0011** (CloudFront distribution should have a WAF) — a real hardening option, but AWS WAF
+  has an ongoing cost or complexity disproportionate to force on by default for every site built
+  from this template. Add `aws_wafv2_web_acl` yourself if your deployment needs it.
+
 ## Quality Tooling
 
 - **Lint** ([ESLint](https://eslint.org/)): `yarn run lint` (fixes in place, for local use) /
@@ -122,10 +168,11 @@ it needs the same four things:
 - **Format** ([Prettier](https://prettier.io/)): `yarn run format` (fixes in place) /
   `yarn run format:check` (CI).
 - **Security scanning**: [CodeQL](https://codeql.github.com/) runs on every push/PR and weekly via
-  `.github/workflows/codeql.yml` (free for public GitHub repos). Security vulnerability alerts are
-  already enabled on this repo; `.github/dependabot.yml` additionally schedules weekly version-update
-  PRs for npm packages, GitHub Actions, and the Terraform provider, grouping minor/patch bumps
-  together to cut down on PR noise.
+  `.github/workflows/codeql.yml` (free for public GitHub repos), covering the app code. Trivy
+  covers the Terraform side — see [Terraform Checks](#terraform-checks). Security vulnerability
+  alerts are already enabled on this repo; `.github/dependabot.yml` additionally schedules weekly
+  version-update PRs for npm packages, GitHub Actions, and the Terraform provider, grouping
+  minor/patch bumps together to cut down on PR noise.
 - **Pre-commit hook**: [Husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged)
   lint/format staged files on commit automatically — set up by `yarn install` (`prepare` script),
   no manual step needed.

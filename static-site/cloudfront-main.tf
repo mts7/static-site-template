@@ -1,5 +1,5 @@
 resource "aws_cloudfront_function" "rewrite-html-extension" {
-  name    = "${var.bucket_name}-rewrite-html-extension"
+  name    = "${local.resource_name_prefix}-rewrite-html-extension"
   runtime = "cloudfront-js-2.0"
   comment = "Appends .html to extensionless URIs and index.html to directory URIs, matching Next.js static export output"
   publish = true
@@ -7,7 +7,7 @@ resource "aws_cloudfront_function" "rewrite-html-extension" {
 }
 
 resource "aws_cloudfront_cache_policy" "static-site" {
-  name    = "${var.bucket_name}-cache-policy"
+  name    = "${local.resource_name_prefix}-cache-policy"
   comment = "Caching for ${var.bucket_name}: no query strings/cookies, static-export TTLs"
 
   min_ttl     = 0
@@ -36,6 +36,7 @@ data "aws_cloudfront_response_headers_policy" "security-headers" {
   name = "Managed-SecurityHeadersPolicy"
 }
 
+# trivy:ignore:AWS-0011
 resource "aws_cloudfront_distribution" "static-site-distribution" {
   enabled             = true
   is_ipv6_enabled     = true

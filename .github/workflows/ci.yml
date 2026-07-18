@@ -39,6 +39,57 @@ jobs:
                   path: out/
                   retention-days: 1
 
+    terraform-check:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            security-events: write
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: hashicorp/setup-terraform@v3
+              with:
+                  terraform_version: '1.11.4'
+
+            - name: Terraform init
+              working-directory: ./static-site
+              run: terraform init -backend=false -input=false
+
+            - name: Terraform validate
+              working-directory: ./static-site
+              run: terraform validate
+
+            - name: Terraform fmt check
+              working-directory: ./static-site
+              run: terraform fmt -check -diff
+
+            - uses: terraform-linters/setup-tflint@v6
+              with:
+                  tflint_version: v0.64.0
+
+            - name: TFLint
+              working-directory: ./static-site
+              run: |
+                  tflint --init
+                  tflint
+
+            - name: Trivy config scan
+              uses: aquasecurity/trivy-action@v0.36.0
+              with:
+                  scan-type: 'config'
+                  scan-ref: 'static-site'
+                  scanners: 'misconfig'
+                  hide-progress: true
+                  format: 'sarif'
+                  output: 'trivy-results.sarif'
+                  exit-code: '1'
+
+            - name: Upload Trivy results to GitHub Security tab
+              if: always()
+              uses: github/codeql-action/upload-sarif@v4
+              with:
+                  sarif_file: 'trivy-results.sarif'
+
     e2e:
         runs-on: ubuntu-latest
         needs: check

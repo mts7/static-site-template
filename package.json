@@ -16,6 +16,11 @@
 		"lint:check": "eslint .",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
+		"tf:fmt:check": "terraform -chdir=static-site fmt -check -diff",
+		"tf:validate": "terraform -chdir=static-site init -backend=false -input=false && terraform -chdir=static-site validate",
+		"tf:lint": "tflint --chdir=static-site --init && tflint --chdir=static-site",
+		"tf:scan": "trivy config --exit-code 1 static-site",
+		"tf:check": "yarn run tf:fmt:check && yarn run tf:validate && yarn run tf:lint && yarn run tf:scan",
 		"prepare": "husky"
 	},
 	"dependencies": {

@@ -1,3 +1,6 @@
+# trivy:ignore:AWS-0132
+# trivy:ignore:AWS-0320
+# trivy:ignore:AWS-0089
 resource "aws_s3_bucket" "static-site" {
   bucket = var.bucket_name
 }
@@ -13,7 +16,21 @@ resource "aws_s3_bucket_ownership_controls" "static-site" {
 resource "aws_s3_bucket_versioning" "static-site" {
   bucket = aws_s3_bucket.static-site.id
   versioning_configuration {
-    status = "Disabled"
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "static-site" {
+  bucket = aws_s3_bucket.static-site.id
+
+  rule {
+    id = "delete-after-30-days"
+
+    status = "Enabled"
+
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
   }
 }
 
@@ -53,7 +70,7 @@ resource "aws_s3_bucket_policy" "static-site" {
 }
 
 resource "aws_cloudfront_origin_access_control" "static-site" {
-  name                              = "${var.bucket_name}-oac"
+  name                              = "${local.resource_name_prefix}-oac"
   description                       = "OAC for ${var.bucket_name}"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
@@ -63,6 +80,8 @@ resource "aws_cloudfront_origin_access_control" "static-site" {
 resource "aws_s3_bucket_public_access_block" "static-site" {
   bucket = aws_s3_bucket.static-site.id
 
-  block_public_acls   = true
-  block_public_policy = true
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
