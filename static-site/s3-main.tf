@@ -3,7 +3,7 @@ resource "aws_s3_bucket" "static-site" {
 }
 
 resource "aws_s3_bucket_ownership_controls" "static-site" {
-  bucket = aws_s3_bucket.log-bucket.id
+  bucket = aws_s3_bucket.static-site.id
 
   rule {
     object_ownership = "ObjectWriter"

@@ -2,7 +2,7 @@ terraform {
   required_version = ">= 1.5.0"
 
   backend "s3" {
-    bucket = "TODO:enter-bucket-name-here-backend-terraform-state"
+    bucket  = "TODO:enter-bucket-name-here-backend-terraform-state"
     key     = "networking/terraform.tfstate"
     region  = "TODO:enter-region-here"
     encrypt = true
@@ -11,7 +11,7 @@ terraform {
 
 import {
   to = aws_s3_bucket.terraform_state
-  id = "pick-first-player.mts7.com-backend-terraform-state"
+  id = "${var.backend_bucket_prefix}-backend-terraform-state"
 }
 
 resource "aws_s3_bucket" "terraform_state" {
