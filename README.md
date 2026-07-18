@@ -1,17 +1,20 @@
 # static-site-template
-Static website template using Vue, CloudFront, S3, and Terraform
+Static website template using Next.js (static export), CloudFront, S3, and Terraform.
+
+Built for real static-site SEO: each route is real pre-rendered HTML (not a client-side-rendered shell), with per-page metadata, Open Graph/Twitter Card tags, and generated `sitemap.xml`/`robots.txt`.
+
+`src-vue/` is the previous Vue implementation, kept for reference only — it is not part of the build.
 
 ## Configuration
 
 ### Replace TODO Values
 
 Update all the `TODO` and `todo` references with the corresponding values.
-- index.ts
-- App.vue
-- google-tag-manager.js
-- package.json
-- index.html
-- create-tfstate-backend-bucket.sh
+- `src/lib/site-config.ts` (site name, description, URL, GTM ID, Twitter handle)
+- `package.json`
+- `static-site/vars.tf`
+- `static-site/backend.tf`
+- `create-tfstate-backend-bucket.sh`
 
 ### Yarn
 
@@ -40,8 +43,6 @@ If the computer is already set up to use AWS, skip this step.
 
 ## Notes
 
-There might be issues with `src/router/index.ts`. If there are, submit a pull request to this repository.
-
 If there are any issues, submit a pull request.
 
 Attempt to keep the Yarn packages up-to-date. We might want to consider using `dependabot` or similar for that.
@@ -58,10 +59,18 @@ yarn install
 yarn dev
 ```
 
-### Type-Check, Compile and Minify for Production
+### Type-Check and Build the Static Site
 
 ```sh
 yarn build
+```
+
+Output is written to `out/`, ready to sync to S3 as-is.
+
+### Preview the Built Static Site Locally
+
+```sh
+yarn preview
 ```
 
 ### Run Unit Tests with [Vitest](https://vitest.dev/)
@@ -75,4 +84,3 @@ yarn test:unit
 ```sh
 yarn lint
 ```
-

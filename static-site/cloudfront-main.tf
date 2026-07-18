@@ -22,8 +22,7 @@ resource "aws_cloudfront_distribution" "static-site-distribution" {
 
   restrictions {
     geo_restriction {
-      restriction_type = "whitelist"
-      locations        = ["US"]
+      restriction_type = "none"
     }
   }
 
@@ -50,15 +49,15 @@ resource "aws_cloudfront_distribution" "static-site-distribution" {
   custom_error_response {
     error_caching_min_ttl = 10
     error_code            = 403
-    response_code         = 200
-    response_page_path    = "/index.html"
+    response_code         = 404
+    response_page_path    = "/404.html"
   }
 
   custom_error_response {
     error_caching_min_ttl = 10
     error_code            = 404
-    response_code         = 200
-    response_page_path    = "/index.html"
+    response_code         = 404
+    response_page_path    = "/404.html"
   }
 
   viewer_certificate {
