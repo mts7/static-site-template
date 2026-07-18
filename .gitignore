@@ -9,13 +9,14 @@ lerna-debug.log*
 
 node_modules
 .DS_Store
-dist
-dist-ssr
 coverage
 *.local
 
-/cypress/videos/
-/cypress/screenshots/
+# Next.js
+.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
 
 # Editor directories and files
 .vscode/*
@@ -27,6 +28,14 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright
+/playwright-report/
+/test-results/
+
+# Stryker
+/reports/
+/.stryker-tmp/
 
 # Terraform
 **/.terraform/*

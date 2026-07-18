@@ -1,78 +1,80 @@
 # static-site-template
-Static website template using Vue, CloudFront, S3, and Terraform
 
-## Configuration
+Static website template using Next.js (static export), CloudFront, S3, and Terraform. Each route
+is pre-rendered HTML with per-page metadata, Open Graph/Twitter Card tags, and a sitemap/robots.txt
+generated from the routes in `src/app`.
 
-### Replace TODO Values
+## Requirements
 
-Update all the `TODO` and `todo` references with the corresponding values.
-- index.ts
-- App.vue
-- google-tag-manager.js
-- package.json
-- index.html
-- create-tfstate-backend-bucket.sh
+- Node.js 22+
+- [Yarn](https://yarnpkg.com/)
+- An AWS account, with the [AWS CLI](https://aws.amazon.com/cli/) installed
+- [Terraform](https://developer.hashicorp.com/terraform) >= 1.5.0
 
-### Yarn
+## Setup
 
-Run `yarn install` in the root directory to install the packages.
-
-### AWS
-
-Run `aws configure` and follow the prompts as necessary.
-
-If the computer is already set up to use AWS, skip this step.
+1. `yarn install`
+2. Replace all `TODO`/`todo` values:
+    - `src/lib/site-config.ts`
+    - `package.json`
+    - `static-site/backend.tf`
+    - `scripts/create-tfstate-backend-bucket.sh`
+    - `static-site/vars.tf` (defaults are `example.com`-style, not literal `TODO` markers)
+3. `aws configure`
 
 ### Terraform
 
-#### Steps
+The Terraform state bucket must exist before the first `terraform apply`, and its name must be set
+by hand in three places (`backend` blocks can't reference variables): `static-site/vars.tf`
+(`backend_bucket_prefix`), `static-site/backend.tf` (`backend "s3" { bucket = ... }`), and
+`scripts/create-tfstate-backend-bucket.sh` (`BUCKET`).
 
-1. Update the variables in `static-site/vars.tf`.
-2. Update all the `todo` or `TODO` references in the `static-site/backend.tf` file.
-3. Verify `create-tfstate-backend-bucket.sh` uses the same bucket name as in `backend.tf`.
-4. Execute `./scripts/create-tfstate-backend-bucket.sh` to create the bucket. 
-5. Run `terraform init` from the `static-site` directory to initialize the Terraform infrastructure.
-6. Run `terraform fmt` to format the code.
-7. Run `terraform plan` to see what the code will do.
-8. Run `terraform apply -auto-approve` to apply the code.
-   1. When running this for the first time, check AWS Console for the Certificate Manager that might have a pending certificate.
-      1. Add the CNAME name and value in the DNS manager for the domain name (if not using Route 53).
+1. Update `static-site/vars.tf`.
+2. Update the `TODO` references in `static-site/backend.tf`.
+3. Update `scripts/create-tfstate-backend-bucket.sh` to use the same bucket name.
+4. `./scripts/create-tfstate-backend-bucket.sh`
+5. `cd static-site && terraform init`
+6. `terraform fmt`
+7. `terraform plan`
+8. `terraform apply -auto-approve`
+    - On first apply, check Certificate Manager in the AWS Console for a pending certificate and
+      add its CNAME to your DNS (if not using Route 53).
+
+## Usage
+
+```sh
+yarn dev       # development server
+yarn build     # type-check and export the static site to out/
+yarn preview   # serve the out/ build locally
+```
+
+## Testing & Quality
+
+```sh
+yarn test:unit           # Vitest
+yarn test:e2e             # Playwright (run `yarn build` first)
+yarn test:mutation        # StrykerJS
+yarn lint / lint:check
+yarn format / format:check
+yarn tf:check              # terraform fmt/validate + TFLint + Trivy
+```
+
+`tf:check` and its component scripts (`tf:fmt:check`, `tf:validate`, `tf:lint`, `tf:scan`) require
+`brew install terraform-linters/tap/tflint trivy`.
+
+A pre-commit hook (Husky + lint-staged) lints and formats staged files automatically.
+
+## CI/CD
+
+Two equivalent pipelines are provided — use one, delete the other:
+
+- `.circleci/config.yml`
+- `.github/workflows/ci.yml` + `.github/workflows/deploy.yml`
+
+Both require `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION` set as CI
+secrets/variables — separate from the local `aws configure` step above, which only configures your
+own machine.
 
 ## Notes
 
-There might be issues with `src/router/index.ts`. If there are, submit a pull request to this repository.
-
 If there are any issues, submit a pull request.
-
-Attempt to keep the Yarn packages up-to-date. We might want to consider using `dependabot` or similar for that.
-
-## Project Setup
-
-```sh
-yarn install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-yarn dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-yarn build
-```
-
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
-yarn test:unit
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-yarn lint
-```
-

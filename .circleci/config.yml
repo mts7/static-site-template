@@ -1,204 +1,250 @@
 version: 2.1
 
 orbs:
-  aws-cli: circleci/aws-cli@4.1.2
-  node: circleci/node@5.1.0
-  terraform: circleci/terraform@3.2.1
+    aws-cli: circleci/aws-cli@4.1.2
+    node: circleci/node@5.1.0
+    terraform: circleci/terraform@3.2.1
 
 commands:
-  checkout-code:
-    steps:
-      - restore_cache:
-          keys:
-            - source-v1-{{ .Branch }}-{{ .Revision }}
-            - source-v1-{{ .Branch }}-
-            - source-v1-
-      - checkout
-      - run:
-          name: git Garbage Collection
-          command: git gc
-      - save_cache:
-          key: source-v1-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - ".git"
+    checkout-code:
+        steps:
+            - restore_cache:
+                  keys:
+                      - source-v1-{{ .Branch }}-{{ .Revision }}
+                      - source-v1-{{ .Branch }}-
+                      - source-v1-
+            - checkout
+            - run:
+                  name: git Garbage Collection
+                  command: git gc
+            - save_cache:
+                  key: source-v1-{{ .Branch }}-{{ .Revision }}
+                  paths:
+                      - '.git'
 
-  build-application:
-    steps:
-      - setup-yarn
-      - run:
-          name: Yarn build
-          command: yarn build
-      - run:
-          name: Copy build directory to artifacts
-          command: |
-            mkdir -p artifacts/dist
-            cp -r dist/* artifacts/dist/
-      - persist_to_workspace:
-          root: ./
-          paths:
-            - artifacts
+    build-application:
+        steps:
+            - setup-yarn
+            - run:
+                  name: Yarn build
+                  command: yarn build
+            - run:
+                  name: Copy build directory to artifacts
+                  command: |
+                      mkdir -p artifacts/site
+                      cp -r out/* artifacts/site/
+            - persist_to_workspace:
+                  root: ./
+                  paths:
+                      - artifacts
 
-  install-packages:
-    steps:
-      - restore_cache:
-          name: Restore Package Cache
-          keys:
-            - package-v2-{{ checksum "package.json" }}
-            - package-v2-
-      - node/install-packages:
-          pkg-manager: yarn
-          with-cache: false
-      - save_cache:
-          name: Save Package Cache
-          key: package-v2-{{ checksum "package.json" }}
-          paths:
-            - ~/project/node_modules
+    install-packages:
+        steps:
+            - restore_cache:
+                  name: Restore Package Cache
+                  keys:
+                      - package-v2-{{ checksum "package.json" }}
+                      - package-v2-
+            - node/install-packages:
+                  pkg-manager: yarn
+                  with-cache: false
+            - save_cache:
+                  name: Save Package Cache
+                  key: package-v2-{{ checksum "package.json" }}
+                  paths:
+                      - ~/project/node_modules
 
-  invalidate-distribution:
-    steps:
-      - attach_workspace:
-          at: ./
-      - aws-cli/setup
-      - run:
-          name: Invalidate CloudFront Distribution
-          command: |
-            aws cloudfront create-invalidation --distribution-id $(cat artifacts/cloudfront_distribution.txt) --paths "/*"
+    invalidate-distribution:
+        steps:
+            - attach_workspace:
+                  at: ./
+            - aws-cli/setup
+            - run:
+                  name: Invalidate CloudFront Distribution
+                  command: |
+                      aws cloudfront create-invalidation --distribution-id $(cat artifacts/cloudfront_distribution.txt) --paths "/*"
 
-  setup-yarn:
-    steps:
-      - checkout-code
-      - node/install-yarn
-      - install-packages
+    setup-yarn:
+        steps:
+            - checkout-code
+            - node/install-yarn
+            - install-packages
 
-  test-application:
-    steps:
-      - run:
-          name: Execute Vite tests with Yarn
-          command: yarn run test:unit
+    test-application:
+        steps:
+            - run:
+                  name: Execute Vitest tests with Yarn
+                  command: yarn run test:unit
 
-  type-check:
-    steps:
-      - run:
-          name: Yarn Type Check
-          command: yarn run-p type-check
+    type-check:
+        steps:
+            - run:
+                  name: Yarn Type Check
+                  command: yarn run type-check
 
-  upload-to-s3:
-    steps:
-      - attach_workspace:
-          at: ./
-      - aws-cli/setup
-      - run:
-          name: Upload /dist to S3 bucket
-          command: |
-            export AWS_DEFAULT_REGION=us-east-1
-            aws s3 sync ./artifacts/dist/ s3://$(cat artifacts/bucket_name.txt) --delete
+    upload-to-s3:
+        steps:
+            - attach_workspace:
+                  at: ./
+            - aws-cli/setup
+            - run:
+                  name: Upload site to S3 bucket
+                  command: |
+                      export AWS_DEFAULT_REGION=us-east-1
+                      aws s3 sync ./artifacts/site/ s3://$(cat artifacts/bucket_name.txt) --delete
 
 jobs:
-  check-app:
-    executor: node/default
-    steps:
-      - setup-yarn
-      - run:
-          name: Run Prettier
-          command: yarn prettier
-      - run:
-          name: Run Lint
-          command: yarn lint
-      - type-check
-      - test-application
+    check-app:
+        executor:
+            name: node/default
+            tag: '22'
+        steps:
+            - setup-yarn
+            - run:
+                  name: Run Prettier
+                  command: yarn run format:check
+            - run:
+                  name: Run Lint
+                  command: yarn run lint:check
+            - type-check
+            - test-application
 
-  create-artifacts-directory:
-    executor: node/default
-    steps:
-      - run:
-          name: Create artifacts directory
-          command: mkdir -p artifacts
-      - persist_to_workspace:
-          root: ./
-          paths:
-            - artifacts
+    terraform-check:
+        executor:
+            name: node/default
+            tag: '22'
+        steps:
+            - checkout-code
+            - run:
+                  name: Install Terraform
+                  command: |
+                      curl -sSLO https://releases.hashicorp.com/terraform/1.11.4/terraform_1.11.4_linux_amd64.zip
+                      curl -sSLO https://releases.hashicorp.com/terraform/1.11.4/terraform_1.11.4_SHA256SUMS
+                      sha256sum --ignore-missing -c terraform_1.11.4_SHA256SUMS
+                      unzip terraform_1.11.4_linux_amd64.zip
+                      sudo install -c -v terraform /usr/local/bin/
+            - run:
+                  name: Install TFLint
+                  command: |
+                      curl -sSLO https://github.com/terraform-linters/tflint/releases/download/v0.64.0/tflint_linux_amd64.zip
+                      curl -sSLO https://github.com/terraform-linters/tflint/releases/download/v0.64.0/checksums.txt
+                      sha256sum --ignore-missing -c checksums.txt
+                      unzip tflint_linux_amd64.zip
+                      sudo install -c -v tflint /usr/local/bin/
+            - run:
+                  name: Install Trivy
+                  command: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.72.0
+            - run:
+                  name: Terraform init
+                  command: cd static-site && terraform init -backend=false -input=false
+            - run:
+                  name: Terraform validate
+                  command: cd static-site && terraform validate
+            - run:
+                  name: Terraform fmt check
+                  command: cd static-site && terraform fmt -check -diff
+            - run:
+                  name: TFLint
+                  command: |
+                      cd static-site
+                      tflint --init
+                      tflint
+            - run:
+                  name: Trivy config scan
+                  command: trivy config --exit-code 1 static-site
 
-  copy-dist-to-s3:
-    executor: aws-cli/default
-    steps:
-      - upload-to-s3
+    create-artifacts-directory:
+        executor:
+            name: node/default
+            tag: '22'
+        steps:
+            - run:
+                  name: Create artifacts directory
+                  command: mkdir -p artifacts
+            - persist_to_workspace:
+                  root: ./
+                  paths:
+                      - artifacts
 
-  invalidate-cloudfront-distribution:
-    executor: aws-cli/default
-    steps:
-      - invalidate-distribution
+    copy-site-to-s3:
+        executor: aws-cli/default
+        steps:
+            - upload-to-s3
 
-  terraform-build:
-    executor:
-      name: terraform/default
-      tag: 1.6.4
-    steps:
-      - checkout-code
-      - attach_workspace:
-          at: ./
-      - terraform/init:
-          path: ./static-site
-      - terraform/validate:
-          path: ./static-site
-      - terraform/fmt:
-          path: ./static-site
-      - terraform/plan:
-          path: ./static-site
-      - terraform/apply:
-          path: ./static-site
-      - run:
-          name: Save bucket name
-          command: |
-            cd static-site
-            terraform output -raw bucket_name > ../artifacts/bucket_name.txt
-            terraform output -raw cloudfront_distribution > ../artifacts/cloudfront_distribution.txt
-      - persist_to_workspace:
-          root: ./
-          paths:
-            - artifacts
+    invalidate-cloudfront-distribution:
+        executor: aws-cli/default
+        steps:
+            - invalidate-distribution
 
-  yarn-build:
-    executor: node/default
-    steps:
-      - build-application
+    terraform-build:
+        executor:
+            name: terraform/default
+            tag: '1.11.4'
+        steps:
+            - checkout-code
+            - attach_workspace:
+                  at: ./
+            - terraform/init:
+                  path: ./static-site
+            - terraform/validate:
+                  path: ./static-site
+            - terraform/fmt:
+                  path: ./static-site
+            - terraform/plan:
+                  path: ./static-site
+            - terraform/apply:
+                  path: ./static-site
+            - run:
+                  name: Save bucket name
+                  command: |
+                      cd static-site
+                      terraform output -raw bucket_name > ../artifacts/bucket_name.txt
+                      terraform output -raw cloudfront_distribution > ../artifacts/cloudfront_distribution.txt
+            - persist_to_workspace:
+                  root: ./
+                  paths:
+                      - artifacts
+
+    yarn-build:
+        executor:
+            name: node/default
+            tag: '22'
+        steps:
+            - build-application
 
 workflows:
-  build:
-    jobs:
-      - check-app
-      - create-artifacts-directory:
-          filters:
-            branches:
-              only:
-                master
-      - yarn-build:
-          requires:
+    build:
+        jobs:
             - check-app
-            - create-artifacts-directory
-          filters:
-            branches:
-              only:
-                master
-      - terraform-build:
-          requires:
-            - check-app
-            - create-artifacts-directory
-          filters:
-            branches:
-              only:
-                master
-      - copy-dist-to-s3:
-          requires:
-            - yarn-build
-            - terraform-build
-          filters:
-            branches:
-              only:
-                master
-      - invalidate-cloudfront-distribution:
-          requires:
-            - copy-dist-to-s3
-          filters:
-            branches:
-              only:
-                master
+            - terraform-check
+            - create-artifacts-directory:
+                  filters:
+                      branches:
+                          only: master
+            - yarn-build:
+                  requires:
+                      - check-app
+                      - create-artifacts-directory
+                  filters:
+                      branches:
+                          only: master
+            - terraform-build:
+                  requires:
+                      - check-app
+                      - create-artifacts-directory
+                  filters:
+                      branches:
+                          only: master
+            - copy-site-to-s3:
+                  requires:
+                      - yarn-build
+                      - terraform-build
+                  filters:
+                      branches:
+                          only: master
+            - invalidate-cloudfront-distribution:
+                  requires:
+                      - copy-site-to-s3
+                  filters:
+                      branches:
+                          only: master

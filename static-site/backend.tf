@@ -1,8 +1,15 @@
 terraform {
   required_version = ">= 1.5.0"
 
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+
   backend "s3" {
-    bucket = "TODO:enter-bucket-name-here-backend-terraform-state"
+    bucket  = "TODO:enter-bucket-name-here-backend-terraform-state"
     key     = "networking/terraform.tfstate"
     region  = "TODO:enter-region-here"
     encrypt = true
@@ -11,9 +18,11 @@ terraform {
 
 import {
   to = aws_s3_bucket.terraform_state
-  id = "pick-first-player.mts7.com-backend-terraform-state"
+  id = "${var.backend_bucket_prefix}-backend-terraform-state"
 }
 
+# trivy:ignore:AWS-0320
+# trivy:ignore:AWS-0089
 resource "aws_s3_bucket" "terraform_state" {
   bucket        = "${var.backend_bucket_prefix}-backend-terraform-state"
   force_destroy = false
@@ -31,6 +40,7 @@ resource "aws_s3_bucket_versioning" "terraform_state" {
   }
 }
 
+# trivy:ignore:AWS-0132
 resource "aws_s3_bucket_server_side_encryption_configuration" "default" {
   bucket = aws_s3_bucket.terraform_state.id
 
