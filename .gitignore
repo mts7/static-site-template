@@ -29,6 +29,14 @@ next-env.d.ts
 *.sln
 *.sw?
 
+# Playwright
+/playwright-report/
+/test-results/
+
+# Stryker
+/reports/
+/.stryker-tmp/
+
 # Terraform
 **/.terraform/*
 *.tfstate

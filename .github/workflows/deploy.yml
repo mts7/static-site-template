@@ -1,0 +1,98 @@
+name: Deploy
+
+on:
+    push:
+        branches: [master]
+
+permissions:
+    contents: read
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-node@v5
+              with:
+                  node-version: 22
+                  cache: yarn
+
+            - run: yarn install --frozen-lockfile
+            - run: yarn run format:check
+            - run: yarn run lint:check
+            - run: yarn run type-check
+            - run: yarn run test:unit
+            - run: yarn run build
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: site
+                  path: out/
+                  retention-days: 1
+
+    terraform:
+        runs-on: ubuntu-latest
+        outputs:
+            bucket_name: ${{ steps.tf-outputs.outputs.bucket_name }}
+            cloudfront_distribution: ${{ steps.tf-outputs.outputs.cloudfront_distribution }}
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: ${{ vars.AWS_REGION }}
+
+            - uses: hashicorp/setup-terraform@v3
+              with:
+                  terraform_version: '1.11.4'
+
+            - name: Terraform init
+              working-directory: ./static-site
+              run: terraform init
+
+            - name: Terraform validate
+              working-directory: ./static-site
+              run: terraform validate
+
+            - name: Terraform fmt check
+              working-directory: ./static-site
+              run: terraform fmt -check
+
+            - name: Terraform plan
+              working-directory: ./static-site
+              run: terraform plan
+
+            - name: Terraform apply
+              working-directory: ./static-site
+              run: terraform apply -auto-approve
+
+            - name: Capture outputs
+              id: tf-outputs
+              working-directory: ./static-site
+              run: |
+                  echo "bucket_name=$(terraform output -raw bucket_name)" >> "$GITHUB_OUTPUT"
+                  echo "cloudfront_distribution=$(terraform output -raw cloudfront_distribution)" >> "$GITHUB_OUTPUT"
+
+    deploy:
+        runs-on: ubuntu-latest
+        needs: [build, terraform]
+        steps:
+            - uses: actions/download-artifact@v5
+              with:
+                  name: site
+                  path: out
+
+            - uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: ${{ vars.AWS_REGION }}
+
+            - name: Sync site to S3
+              run: aws s3 sync ./out/ "s3://${{ needs.terraform.outputs.bucket_name }}" --delete
+
+            - name: Invalidate CloudFront distribution
+              run: aws cloudfront create-invalidation --distribution-id "${{ needs.terraform.outputs.cloudfront_distribution }}" --paths "/*"

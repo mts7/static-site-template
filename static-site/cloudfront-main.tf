@@ -1,3 +1,11 @@
+resource "aws_cloudfront_function" "rewrite-html-extension" {
+  name    = "${var.bucket_name}-rewrite-html-extension"
+  runtime = "cloudfront-js-2.0"
+  comment = "Appends .html to extensionless URIs and index.html to directory URIs, matching Next.js static export output"
+  publish = true
+  code    = file("${path.module}/cloudfront-functions/rewrite-html-extension.js")
+}
+
 resource "aws_cloudfront_distribution" "static-site-distribution" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -44,6 +52,11 @@ resource "aws_cloudfront_distribution" "static-site-distribution" {
     min_ttl                = 0
     default_ttl            = 7200
     max_ttl                = 86400
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.rewrite-html-extension.arn
+    }
   }
 
   custom_error_response {
