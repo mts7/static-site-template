@@ -6,27 +6,14 @@ resource "aws_s3_bucket_ownership_controls" "static-site" {
   bucket = aws_s3_bucket.static-site.id
 
   rule {
-    object_ownership = "ObjectWriter"
+    object_ownership = "BucketOwnerEnforced"
   }
-}
-
-resource "aws_s3_bucket_acl" "static-site" {
-  bucket = aws_s3_bucket.static-site.id
-  acl    = "private"
 }
 
 resource "aws_s3_bucket_versioning" "static-site" {
   bucket = aws_s3_bucket.static-site.id
   versioning_configuration {
     status = "Disabled"
-  }
-}
-
-resource "aws_s3_bucket_website_configuration" "static-site" {
-  bucket = aws_s3_bucket.static-site.id
-
-  index_document {
-    suffix = "index.html"
   }
 }
 
@@ -44,14 +31,16 @@ data "aws_iam_policy_document" "s3_policy" {
     resources = ["${aws_s3_bucket.static-site.arn}/*"]
 
     principals {
-      type        = "AWS"
-      identifiers = [aws_cloudfront_origin_access_identity.origin_access_identity.iam_arn]
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceArn"
+      values   = [aws_cloudfront_distribution.static-site-distribution.arn]
     }
   }
-
-  depends_on = [
-    aws_cloudfront_origin_access_identity.origin_access_identity
-  ]
 }
 
 resource "aws_s3_bucket_policy" "static-site" {
@@ -63,8 +52,12 @@ resource "aws_s3_bucket_policy" "static-site" {
   ]
 }
 
-resource "aws_cloudfront_origin_access_identity" "origin_access_identity" {
-  comment = "OAI for ${var.bucket_name}"
+resource "aws_cloudfront_origin_access_control" "static-site" {
+  name                              = "${var.bucket_name}-oac"
+  description                       = "OAC for ${var.bucket_name}"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
 }
 
 resource "aws_s3_bucket_public_access_block" "static-site" {

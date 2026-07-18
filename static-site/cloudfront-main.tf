@@ -6,22 +6,54 @@ resource "aws_cloudfront_function" "rewrite-html-extension" {
   code    = file("${path.module}/cloudfront-functions/rewrite-html-extension.js")
 }
 
+resource "aws_cloudfront_cache_policy" "static-site" {
+  name    = "${var.bucket_name}-cache-policy"
+  comment = "Caching for ${var.bucket_name}: no query strings/cookies, static-export TTLs"
+
+  min_ttl     = 0
+  default_ttl = 7200
+  max_ttl     = 86400
+
+  parameters_in_cache_key_and_forwarded_to_origin {
+    enable_accept_encoding_gzip   = true
+    enable_accept_encoding_brotli = true
+
+    cookies_config {
+      cookie_behavior = "none"
+    }
+
+    headers_config {
+      header_behavior = "none"
+    }
+
+    query_strings_config {
+      query_string_behavior = "none"
+    }
+  }
+}
+
+data "aws_cloudfront_response_headers_policy" "security-headers" {
+  name = "Managed-SecurityHeadersPolicy"
+}
+
 resource "aws_cloudfront_distribution" "static-site-distribution" {
   enabled             = true
   is_ipv6_enabled     = true
   default_root_object = "index.html"
+  price_class         = var.price_class
+  http_version        = "http2and3"
 
   origin {
-    domain_name = aws_s3_bucket.static-site.bucket_regional_domain_name
-    origin_id   = aws_s3_bucket_website_configuration.static-site.website_endpoint
+    domain_name              = aws_s3_bucket.static-site.bucket_regional_domain_name
+    origin_id                = "S3-${var.bucket_name}"
+    origin_access_control_id = aws_cloudfront_origin_access_control.static-site.id
 
     s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.origin_access_identity.cloudfront_access_identity_path
+      origin_access_identity = ""
     }
   }
 
   aliases = [var.app_domain]
-  tags    = { "project" : var.app_domain }
 
   logging_config {
     bucket          = "${var.log_bucket}.s3.amazonaws.com"
@@ -35,23 +67,16 @@ resource "aws_cloudfront_distribution" "static-site-distribution" {
   }
 
   default_cache_behavior {
-    target_origin_id = aws_s3_bucket_website_configuration.static-site.website_endpoint
+    target_origin_id = "S3-${var.bucket_name}"
 
     allowed_methods = ["GET", "HEAD"]
     cached_methods  = ["GET", "HEAD"]
+    compress        = true
 
-    forwarded_values {
-      query_string = false
-
-      cookies {
-        forward = "none"
-      }
-    }
+    cache_policy_id            = aws_cloudfront_cache_policy.static-site.id
+    response_headers_policy_id = data.aws_cloudfront_response_headers_policy.security-headers.id
 
     viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 7200
-    max_ttl                = 86400
 
     function_association {
       event_type   = "viewer-request"

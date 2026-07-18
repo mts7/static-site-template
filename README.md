@@ -69,6 +69,12 @@ extensionless requests and `index.html` to directory-style requests. This matche
 static export output (e.g. `about.html`, not `about/index.html`) — without it, clean URLs like
 `/about` 404 on S3/CloudFront even though the page built successfully.
 
+The site bucket is fully private — no S3 static-website hosting, no bucket ACLs, no public access
+of any kind. CloudFront reaches it via Origin Access Control (OAC), and the bucket policy only
+trusts requests coming from this specific distribution. Adjust `price_class` in `vars.tf` if you
+want CloudFront to use edge locations outside North America/Europe (the default,
+`PriceClass_100`, is the cheapest option).
+
 ## Continuous Integration / Deployment
 
 This template ships with two working, equivalent pipelines — pick one and delete the other once

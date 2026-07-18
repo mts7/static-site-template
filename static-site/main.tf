@@ -1,5 +1,12 @@
 provider "aws" {
   region = var.region
+
+  default_tags {
+    tags = {
+      Project   = var.app_domain
+      ManagedBy = "terraform"
+    }
+  }
 }
 
 resource "aws_acm_certificate" "default" {
