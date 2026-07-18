@@ -11,7 +11,7 @@ jobs:
     build:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v7
 
             - uses: actions/setup-node@v5
               with:
@@ -37,7 +37,7 @@ jobs:
             bucket_name: ${{ steps.tf-outputs.outputs.bucket_name }}
             cloudfront_distribution: ${{ steps.tf-outputs.outputs.cloudfront_distribution }}
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v7
 
             - uses: aws-actions/configure-aws-credentials@v4
               with:
