@@ -24,9 +24,9 @@
 		"prepare": "husky"
 	},
 	"dependencies": {
-		"next": "16.2.10",
-		"react": "19.2.7",
-		"react-dom": "19.2.7"
+		"next": "16.2.11",
+		"react": "19.2.8",
+		"react-dom": "19.2.8"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.61.1",
@@ -38,13 +38,13 @@
 		"@types/node": "^22",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
-		"@vitejs/plugin-react": "^6.0.3",
+		"@vitejs/plugin-react": "^6.0.4",
 		"eslint": "^9",
-		"eslint-config-next": "16.2.10",
+		"eslint-config-next": "16.2.11",
 		"husky": "^9.1.7",
 		"jsdom": "^29",
-		"lint-staged": "^17.0.8",
-		"prettier": "^3.9.4",
+		"lint-staged": "^17.2.0",
+		"prettier": "^3.9.6",
 		"serve": "^14.2.6",
 		"typescript": "^5",
 		"vite": "^8.1.3",
