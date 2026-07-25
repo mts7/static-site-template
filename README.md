@@ -7,13 +7,13 @@ generated from the routes in `src/app`.
 ## Requirements
 
 - Node.js 22+
-- [Yarn](https://yarnpkg.com/)
+- [pnpm](https://pnpm.io/)
 - An AWS account, with the [AWS CLI](https://aws.amazon.com/cli/) installed
 - [Terraform](https://developer.hashicorp.com/terraform) >= 1.5.0
 
 ## Setup
 
-1. `yarn install`
+1. `pnpm install`
 2. Replace all `TODO`/`todo` values:
     - `src/lib/site-config.ts`
     - `package.json`
@@ -43,21 +43,21 @@ by hand in three places (`backend` blocks can't reference variables): `static-si
 ## Usage
 
 ```sh
-yarn dev       # development server
-yarn build     # type-check and export the static site to out/
-yarn preview   # serve the out/ build locally
+pnpm run dev       # development server
+pnpm run build     # type-check and export the static site to out/
+pnpm run preview   # serve the out/ build locally
 ```
 
 ## Testing & Quality
 
 ```sh
-yarn test:unit           # Vitest
-yarn test:e2e             # Playwright (run `yarn build` first)
-yarn test:mutation        # StrykerJS
-yarn lint / lint:check
-yarn format / format:check
-yarn tf:check              # terraform fmt/validate + TFLint + Trivy
-pnpm run lighthouse         # Lighthouse CI (run `pnpm run build` first)
+pnpm run test:unit           # Vitest
+pnpm run test:e2e             # Playwright (run `pnpm run build` first)
+pnpm run test:mutation        # StrykerJS
+pnpm run lint / lint:check
+pnpm run format / format:check
+pnpm run tf:check              # terraform fmt/validate + TFLint + Trivy
+pnpm run lighthouse            # Lighthouse CI (run `pnpm run build` first)
 ```
 
 `tf:check` and its component scripts (`tf:fmt:check`, `tf:validate`, `tf:lint`, `tf:scan`) require
@@ -72,14 +72,14 @@ gate merges on.
 
 ## CI/CD
 
-Two equivalent pipelines are provided — use one, delete the other:
+GitHub Actions is the active pipeline: `.github/workflows/ci.yml` + `.github/workflows/deploy.yml`.
+A retired CircleCI config is kept at `.circleci/config.yml.old` for reference only — it predates
+the pnpm migration, so it would need updating (and renaming back to `config.yml`) before it would
+run again.
 
-- `.circleci/config.yml`
-- `.github/workflows/ci.yml` + `.github/workflows/deploy.yml`
-
-Both require `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION` set as CI
-secrets/variables — separate from the local `aws configure` step above, which only configures your
-own machine.
+The GitHub Actions pipeline requires `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION`
+set as repo secrets/variables — separate from the local `aws configure` step above, which only
+configures your own machine.
 
 ## Notes
 
