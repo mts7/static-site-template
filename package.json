@@ -21,6 +21,7 @@
 		"tf:lint": "tflint --chdir=static-site --init && tflint --chdir=static-site",
 		"tf:scan": "trivy config --exit-code 1 static-site",
 		"tf:check": "yarn run tf:fmt:check && yarn run tf:validate && yarn run tf:lint && yarn run tf:scan",
+		"audit": "yarn audit",
 		"prepare": "husky"
 	},
 	"dependencies": {
