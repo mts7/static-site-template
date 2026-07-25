@@ -37,6 +37,9 @@ next-env.d.ts
 /reports/
 /.stryker-tmp/
 
+# Lighthouse CI
+/.lighthouseci/
+
 # Terraform
 **/.terraform/*
 *.tfstate

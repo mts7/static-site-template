@@ -1,0 +1,11 @@
+{
+	"ci": {
+		"collect": {
+			"staticDistDir": "./out",
+			"url": ["/", "/about.html"]
+		},
+		"upload": {
+			"target": "temporary-public-storage"
+		}
+	}
+}

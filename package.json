@@ -12,6 +12,7 @@
 		"test:unit": "vitest run",
 		"test:e2e": "playwright test",
 		"test:mutation": "stryker run",
+		"lighthouse": "lhci autorun",
 		"lint": "eslint . --fix",
 		"lint:check": "eslint .",
 		"format": "prettier --write .",
@@ -20,33 +21,37 @@
 		"tf:validate": "terraform -chdir=static-site init -backend=false -input=false && terraform -chdir=static-site validate",
 		"tf:lint": "tflint --chdir=static-site --init && tflint --chdir=static-site",
 		"tf:scan": "trivy config --exit-code 1 static-site",
-		"tf:check": "yarn run tf:fmt:check && yarn run tf:validate && yarn run tf:lint && yarn run tf:scan",
+		"tf:check": "pnpm run tf:fmt:check && pnpm run tf:validate && pnpm run tf:lint && pnpm run tf:scan",
+		"audit": "pnpm audit",
+		"audit:signatures": "pnpm audit signatures",
 		"prepare": "husky"
 	},
 	"dependencies": {
-		"next": "16.2.10",
-		"react": "19.2.7",
-		"react-dom": "19.2.7"
+		"next": "16.2.11",
+		"react": "19.2.8",
+		"react-dom": "19.2.8"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "^4.12.1",
+		"@lhci/cli": "^0.15.1",
 		"@playwright/test": "^1.61.1",
 		"@stryker-mutator/core": "^9.6.1",
 		"@stryker-mutator/vitest-runner": "^9.6.1",
 		"@testing-library/dom": "^10.4.1",
-		"@testing-library/jest-dom": "^6.9.1",
+		"@testing-library/jest-dom": "^7.0.0",
 		"@testing-library/react": "^16.3.2",
 		"@types/node": "^22",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
 		"@vitejs/plugin-react": "^6.0.3",
 		"eslint": "^9",
-		"eslint-config-next": "16.2.10",
+		"eslint-config-next": "16.2.11",
 		"husky": "^9.1.7",
 		"jsdom": "^29",
 		"lint-staged": "^17.0.8",
 		"prettier": "^3.9.4",
 		"serve": "^14.2.6",
-		"typescript": "^5",
+		"typescript": "~6.0.3",
 		"vite": "^8.1.3",
 		"vitest": "^4.1.9"
 	},
@@ -55,5 +60,6 @@
 			"eslint --fix",
 			"prettier --write"
 		]
-	}
+	},
+	"packageManager": "pnpm@11.17.0+sha512.cca3cea332ad254bb84145f966d19f4879615210346fc92c79a047f23a0d7b3cca3c3792f0076ba1f1831d277efbcf0a9119b31a9a60eca7fb3d6231f331ef72"
 }
