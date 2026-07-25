@@ -24,6 +24,9 @@ jobs:
             - name: Format check
               run: pnpm run format:check
 
+            - name: Security audit
+              run: pnpm run audit
+
             - name: Lint
               run: pnpm run lint:check
 

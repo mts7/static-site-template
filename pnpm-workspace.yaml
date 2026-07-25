@@ -7,3 +7,7 @@ overrides:
 allowBuilds:
     sharp: true
     unrs-resolver: true
+
+auditConfig:
+    ignoreGhsas:
+        - GHSA-mh99-v99m-4gvg
