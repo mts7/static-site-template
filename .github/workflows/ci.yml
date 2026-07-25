@@ -11,27 +11,30 @@ jobs:
         steps:
             - uses: actions/checkout@v7
 
+            - uses: pnpm/action-setup@v6
+              with:
+                  cache: true
+
             - uses: actions/setup-node@v7
               with:
                   node-version: 22
-                  cache: yarn
 
-            - run: yarn install --frozen-lockfile
+            - run: pnpm install --frozen-lockfile
 
             - name: Format check
-              run: yarn run format:check
+              run: pnpm run format:check
 
             - name: Lint
-              run: yarn run lint:check
+              run: pnpm run lint:check
 
             - name: Type check
-              run: yarn run type-check
+              run: pnpm run type-check
 
             - name: Unit tests
-              run: yarn run test:unit
+              run: pnpm run test:unit
 
             - name: Build
-              run: yarn run build
+              run: pnpm run build
 
             - uses: actions/upload-artifact@v7
               with:
@@ -96,15 +99,18 @@ jobs:
         steps:
             - uses: actions/checkout@v7
 
+            - uses: pnpm/action-setup@v6
+              with:
+                  cache: true
+
             - uses: actions/setup-node@v7
               with:
                   node-version: 22
-                  cache: yarn
 
-            - run: yarn install --frozen-lockfile
-            - run: yarn run build
-            - run: npx playwright install --with-deps chromium
-            - run: yarn run test:e2e
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm run build
+            - run: pnpm exec playwright install --with-deps chromium
+            - run: pnpm run test:e2e
 
             - uses: actions/upload-artifact@v7
               if: always()
