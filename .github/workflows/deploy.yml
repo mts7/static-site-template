@@ -26,6 +26,7 @@ jobs:
             - run: pnpm install --frozen-lockfile
             - run: pnpm run format:check
             - run: pnpm run audit
+            - run: pnpm run audit:signatures
             - run: pnpm run lint:check
             - run: pnpm run type-check
             - run: pnpm run test:unit

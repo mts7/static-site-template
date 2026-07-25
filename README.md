@@ -57,12 +57,18 @@ yarn test:mutation        # StrykerJS
 yarn lint / lint:check
 yarn format / format:check
 yarn tf:check              # terraform fmt/validate + TFLint + Trivy
+pnpm run lighthouse         # Lighthouse CI (run `pnpm run build` first)
 ```
 
 `tf:check` and its component scripts (`tf:fmt:check`, `tf:validate`, `tf:lint`, `tf:scan`) require
 `brew install terraform-linters/tap/tflint trivy`.
 
 A pre-commit hook (Husky + lint-staged) lints and formats staged files automatically.
+
+Lighthouse CI runs in `ci.yml` on every PR and reports performance/accessibility/best-practices/SEO
+scores — informationally only, with no thresholds enforced, since a freshly cloned template has no
+real content to score against. Add assertions in `.lighthouserc.json` once there's a real site to
+gate merges on.
 
 ## CI/CD
 
