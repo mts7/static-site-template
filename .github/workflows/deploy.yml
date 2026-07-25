@@ -11,9 +11,9 @@ jobs:
     build:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v7
 
-            - uses: actions/setup-node@v5
+            - uses: actions/setup-node@v7
               with:
                   node-version: 22
                   cache: yarn
@@ -25,7 +25,7 @@ jobs:
             - run: yarn run test:unit
             - run: yarn run build
 
-            - uses: actions/upload-artifact@v4
+            - uses: actions/upload-artifact@v7
               with:
                   name: site
                   path: out/
@@ -37,9 +37,9 @@ jobs:
             bucket_name: ${{ steps.tf-outputs.outputs.bucket_name }}
             cloudfront_distribution: ${{ steps.tf-outputs.outputs.cloudfront_distribution }}
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v7
 
-            - uses: aws-actions/configure-aws-credentials@v4
+            - uses: aws-actions/configure-aws-credentials@v6
               with:
                   aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
                   aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -80,12 +80,12 @@ jobs:
         runs-on: ubuntu-latest
         needs: [build, terraform]
         steps:
-            - uses: actions/download-artifact@v5
+            - uses: actions/download-artifact@v8
               with:
                   name: site
                   path: out
 
-            - uses: aws-actions/configure-aws-credentials@v4
+            - uses: aws-actions/configure-aws-credentials@v6
               with:
                   aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
                   aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
