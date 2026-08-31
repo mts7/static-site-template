@@ -17,13 +17,13 @@ jobs:
               with:
                   persist-credentials: false
 
-            - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+            - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
               with:
                   cache: true
 
             - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
               with:
-                  node-version: 22
+                  node-version-file: '.nvmrc'
 
             - run: pnpm install --frozen-lockfile
 
@@ -66,7 +66,7 @@ jobs:
 
             - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
               with:
-                  terraform_version: '1.11.4'
+                  terraform_version: '1.16.0'
 
             - name: Terraform init
               working-directory: ./static-site
@@ -103,7 +103,7 @@ jobs:
 
             - name: Upload Trivy results to GitHub Security tab
               if: always()
-              uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+              uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
               with:
                   sarif_file: 'trivy-results.sarif'
 
@@ -134,7 +134,7 @@ jobs:
                   persist-credentials: false
 
             - name: zizmor
-              uses: zizmorcore/zizmor-action@6fc4b006235f201fdab3722e17240ab420d580e5 # v0.6.1
+              uses: zizmorcore/zizmor-action@70fb788f84895a7701f5643d103d587e460b5c99 # v0.6.3
               with:
                   inputs: ./.github/
 
@@ -148,13 +148,13 @@ jobs:
               with:
                   persist-credentials: false
 
-            - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+            - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
               with:
                   cache: true
 
             - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
               with:
-                  node-version: 22
+                  node-version-file: '.nvmrc'
 
             - run: pnpm install --frozen-lockfile
             - run: pnpm run build
@@ -178,13 +178,13 @@ jobs:
               with:
                   persist-credentials: false
 
-            - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+            - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
               with:
                   cache: true
 
             - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
               with:
-                  node-version: 22
+                  node-version-file: '.nvmrc'
 
             - run: pnpm install --frozen-lockfile
             - run: pnpm run build
